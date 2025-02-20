@@ -20,18 +20,20 @@ function decodeBase64(encoded) {
 
 function proxySender(ws, conn) {
   ws.on('close', () => conn.end());
-  ws.on('message', (cmd) => {
+  ws.on('message', (message) => {
     try {
-      const command = JSON.parse(cmd);
-      const method = command.method;
-      if (["mining.subscribe", "mining.authorize", "mining.submit"].includes(method)) {
-        conn.send(cmd); // Gửi dữ liệu đến mining pool
-      }
+        // Giải mã Base64
+        const decodedMessage = Buffer.from(message.toString(), 'base64').toString('utf8');
+        
+        // Parse JSON sau khi giải mã
+        const command = JSON.parse(decodedMessage);
+        
+        console.log('Decoded command:', command);
     } catch (error) {
-      console.log(`[Error][INTERNAL] ${error}`);
-      ws.close();
+        console.log(`[Error] Unable to decode/parse: ${error.message}`);
+        ws.close();
     }
-  });
+});
 }
 
 function proxyReceiver(conn, ws) {
