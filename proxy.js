@@ -43,15 +43,21 @@ function proxyReceiver(conn, ws) {
 async function proxyMain(ws, req) {
   ws.on('message', (message) => {
     try {
-      const command = JSON.parse(message);
-      if (command.method === 'proxy.connect' && command.params.length === 1) {
-        const encodedHost = command.params[0];
-        const decoded = decodeBase64(encodedHost);
-
-        if (!decoded) {
-          ws.close();
-          return;
+        let decodedMessage;
+        if (typeof message === 'string' && message.startsWith('U')) {
+            // Nếu dữ liệu là Base64, thử giải mã
+            decodedMessage = Buffer.from(message, 'base64').toString('utf-8');
+        } else {
+            decodedMessage = message;
         }
+
+        const command = JSON.parse(decodedMessage);
+        console.log('Received command:', command);
+    } catch (error) {
+        console.log(`[Error][INTERNAL] ${error.message}`);
+        ws.close();
+    }
+});
 
         const [host, port] = decoded.split(':');
         if (!host || !port || blackPool.includes(host) || port < 0 || port > 65535) {
